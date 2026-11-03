@@ -33,7 +33,7 @@ body{
   height:100vh;height:100dvh;
   width:min(100vw, calc(100vh * .5625));width:min(100vw, calc(100dvh * .5625));
 }
-.glass{position:relative;width:100%;height:100%;overflow:hidden;background:#000}
+.glass{position:relative;width:100%;height:100%;overflow:hidden;background:#000;touch-action:none}
 .stack{position:absolute;inset:0;z-index:1}
 /* clips swap instantly: the next one is shown only once its first frame is playing, then the old one is hidden */
 .glass video,.glass img.poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none}
@@ -351,6 +351,7 @@ body.calm .turn.show{opacity:.4}
     if (!entered) unlock();
     if (state === "room"){ startIntro(i); return; }
     if ((state === "intro" || state === "standing" || MOVES.has(state)) && i === current && pending === null) return;   // she is already wearing it: do nothing
+    if (i === current && pending !== null && state !== "outro"){ pending = null; render(); return; }   // changed her mind back before she left: she stays
     pending = i; clearTimeout(fidgetT); render();
     if (state === "standing") startOutro();            // intro/outro in progress: the click waits its turn
   }
@@ -407,6 +408,24 @@ body.calm .turn.show{opacity:.4}
     if (suppressClick){ suppressClick = false; return; }
     if (state === "standing" || state === "fidget") startTurn();   // tapping the mirror plays the whole turn
   });
+  // Swipe up / down on the mirror = next / previous outfit (wraps round). Needs a mostly vertical, quick, long-enough stroke,
+  // so it never fights the sideways drag (turn) or the long press (come closer). From the empty room, a swipe up picks the first look.
+  let sw = null;
+  glass.addEventListener("pointerdown", e => {
+    if (e.target.closest(".turn, .rail")) return;
+    sw = { x:e.clientX, y:e.clientY, id:e.pointerId, t:Date.now() };
+  });
+  glass.addEventListener("pointerup", e => {
+    if (!sw || e.pointerId !== sw.id) return;
+    const dy = e.clientY - sw.y, dx = e.clientX - sw.x, quick = Date.now() - sw.t < 900;
+    sw = null;
+    if (scrubbing || !quick || Math.abs(dy) < 60 || Math.abs(dy) < Math.abs(dx) * 1.6) return;
+    suppressClick = true;
+    const n = LOOKS.length, d = dy < 0 ? 1 : -1;
+    const base = pending !== null ? pending : current;     // swiping again while she is changing moves on from the queued look
+    choose(base < 0 ? (d > 0 ? 0 : n - 1) : (base + d + n) % n);
+  });
+  glass.addEventListener("pointercancel", () => { sw = null; });
   document.addEventListener("keydown", e => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key === " " && e.target === document.body){ e.preventDefault(); startMove("turn"); return; }
