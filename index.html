@@ -1,47 +1,39 @@
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e0a09">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>江遥的试衣间</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&family=ZCOOL+XiaoWei&display=swap">
 <style>
-/* One dark dressing room seen from the mirror. No text on screen: the mirror is the stage, the hangers are small portrait thumbnails.
-   Landscape / wide: mirror on the left, a column of hangers on the right.
-   Portrait (phones, tablets): mirror on top, one row of hangers underneath. */
+/* One dark dressing room seen from the mirror, full screen, no frame. No text on screen.
+   The stage fills the screen (phones: edge to edge; wider screens: full height, 9:16, centred).
+   The hangers are small portrait thumbnails floating on the left edge of the picture; the round icons sit bottom right. */
 :root{
   --room:#0e0a09;
   --brass:#b08a60;
   --brass-hi:#dcbd8c;
   --brass-dim:#5c4733;
-  --pad:16px;
-  --rail-w:108px;
-  --strip:96px;          /* height reserved for the hanger row in the portrait layout: thumb (<=66px wide, 4:5) + padding */
+  --pad:12px;
   color-scheme:dark;
 }
 [hidden]{display:none!important}
 *{-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overscroll-behavior:none}
 body{
-  margin:0;background:var(--room);
-  background-image:radial-gradient(120% 70% at 50% 0%, rgba(74,16,19,.38), transparent 60%);
-  padding:max(var(--pad), env(safe-area-inset-top, 0px)) max(var(--pad), env(safe-area-inset-right, 0px)) max(var(--pad), env(safe-area-inset-bottom, 0px)) max(var(--pad), env(safe-area-inset-left, 0px));
-  box-sizing:border-box;overflow:hidden;
+  margin:0;background:var(--room);overflow:hidden;
   user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
 }
-.room{height:100%;display:flex;gap:28px;align-items:center;justify-content:center}
-
-/* ---------- mirror ---------- */
 .mirror{
-  --mh:min(calc(100vh - 40px), calc((100vw - var(--rail-w) - 28px - 2 * var(--pad)) * 1.7778));
-  --mh:min(calc(100dvh - 40px), calc((100vw - var(--rail-w) - 28px - 2 * var(--pad)) * 1.7778));
-  position:relative;height:var(--mh);width:calc(var(--mh) * .5625);flex:0 0 auto;
-  border-radius:3px;padding:7px;box-sizing:border-box;
-  background:linear-gradient(160deg,#d2aa7a 0%,#6e5236 22%,#b38c60 48%,#4d3a27 74%,#a07b52 100%);
-  box-shadow:0 0 0 1px #000, 0 30px 80px rgba(0,0,0,.7), 0 0 120px rgba(74,16,19,.35);
+  position:fixed;inset:0;margin:auto;
+  height:100vh;height:100dvh;
+  width:min(100vw, calc(100vh * .5625));width:min(100vw, calc(100dvh * .5625));
 }
-.mirror::after{content:"";position:absolute;inset:0;border-radius:3px;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(255,236,204,.28), inset 0 1px 0 rgba(255,244,222,.35)}
-.glass{position:relative;width:100%;height:100%;overflow:hidden;background:#000;border-radius:1px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.6)}
+.glass{position:relative;width:100%;height:100%;overflow:hidden;background:#000}
 .stack{position:absolute;inset:0;z-index:1}
 /* clips swap instantly: the next one is shown only once its first frame is playing, then the old one is hidden */
 .glass video,.glass img.poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none}
@@ -50,7 +42,7 @@ body{
 .glass video.on,.glass img.poster.on{opacity:1}
 .glass video.fade{transition:opacity .24s linear}   /* only idle -> turn: hides the 3-4px head shift breathing leaves */
 /* "let her turn": a small round icon inside the mirror, shown only while she stands in a look that has a turn clip */
-.acts{position:absolute;right:12px;bottom:12px;z-index:7;display:flex;flex-direction:column;gap:10px}
+.acts{position:absolute;right:max(14px, env(safe-area-inset-right, 0px));bottom:max(18px, calc(env(safe-area-inset-bottom, 0px) + 10px));z-index:7;display:flex;flex-direction:column;gap:10px}
 .turn{all:unset;position:relative;width:42px;height:42px;border-radius:50%;cursor:pointer;touch-action:manipulation;
   display:grid;place-items:center;background:rgba(10,7,6,.45);border:1px solid rgba(220,189,140,.55);color:var(--brass-hi);
   backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);transition:opacity .35s, transform .15s, background .2s;opacity:0;pointer-events:none}
@@ -66,61 +58,44 @@ body{
 .sheen{position:absolute;inset:0;pointer-events:none;z-index:4;
   background:
     linear-gradient(115deg, transparent 30%, rgba(255,255,255,.045) 38%, transparent 46%),
-    radial-gradient(140% 90% at 50% 45%, transparent 62%, rgba(0,0,0,.55) 100%);}
+    radial-gradient(140% 90% at 50% 45%, transparent 68%, rgba(0,0,0,.32) 100%);}
 .dbg{position:absolute;left:8px;top:8px;z-index:9;font:11px/1.5 ui-monospace,Menlo,Consolas,monospace;color:#9fe3a8;
   background:rgba(0,0,0,.6);padding:4px 7px;border-radius:2px;pointer-events:none;white-space:pre}
 
-/* ---------- hangers ---------- */
-.rail{flex:0 0 var(--rail-w);width:var(--rail-w);align-self:center;min-width:0;max-height:100%;display:flex}
-.looks{display:flex;flex-direction:column;gap:12px;margin:0;padding:3px;list-style:none;overflow-y:auto;min-height:0;width:100%;scrollbar-width:none}
-.looks::-webkit-scrollbar{display:none}
-.look{all:unset;box-sizing:border-box;position:relative;display:block;width:100%;padding:5px;cursor:pointer;touch-action:manipulation;
-  border:1px solid var(--brass-dim);border-radius:2px;background:rgba(255,255,255,.02);
+/* ---------- hangers: small thumbnails floating on the left edge of the picture ---------- */
+.rail{position:absolute;z-index:8;left:max(var(--pad), env(safe-area-inset-left, 0px));top:50%;transform:translateY(-50%);
+  width:46px;display:flex;transition:opacity .7s}
+.looks{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none;width:100%}
+.look{all:unset;box-sizing:border-box;position:relative;display:block;width:100%;padding:3px;cursor:pointer;touch-action:manipulation;
+  border:1px solid rgba(220,189,140,.4);border-radius:3px;background:rgba(10,7,6,.38);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
   transition:border-color .2s, background .2s, transform .15s, box-shadow .2s}
-.look img{display:block;width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;border-radius:1px;pointer-events:none;-webkit-user-drag:none}
-.look:hover{border-color:var(--brass);background:rgba(176,138,96,.1)}
-.look:active{transform:scale(.97)}
+.look img{display:block;width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;border-radius:2px;pointer-events:none;-webkit-user-drag:none}
+.look:hover{border-color:var(--brass);background:rgba(176,138,96,.25)}
+.look:active{transform:scale(.95)}
 .look:focus-visible{outline:2px solid #f0e6da;outline-offset:3px}
-.look[aria-current="true"]{border-color:var(--brass-hi);background:rgba(176,138,96,.18);box-shadow:0 0 0 1px var(--brass-hi), 0 0 18px rgba(220,189,140,.25)}
+.look[aria-current="true"]{border-color:var(--brass-hi);background:rgba(176,138,96,.3);box-shadow:0 0 0 1px var(--brass-hi), 0 0 14px rgba(220,189,140,.3)}
 .look[data-pending="true"]{border-style:dashed;border-color:var(--brass-hi)}
 /* she is on her way but the clip is still downloading: a small ring instead of text */
 @keyframes spin{to{transform:rotate(360deg)}}
-.look[data-loading="true"]::after{content:"";position:absolute;right:9px;top:9px;width:16px;height:16px;border-radius:50%;
+.look[data-loading="true"]::after{content:"";position:absolute;right:6px;top:6px;width:14px;height:14px;border-radius:50%;
   border:2px solid rgba(240,230,218,.25);border-top-color:#f0e6da;animation:spin .8s linear infinite;filter:drop-shadow(0 0 3px #000)}
 /* before the first tap: the hangers breathe once in turn, so it is obvious they can be touched */
-@keyframes beckon{0%,100%{box-shadow:0 0 0 0 rgba(220,189,140,0);border-color:var(--brass-dim)}45%{box-shadow:0 0 0 1px var(--brass-hi),0 0 16px rgba(220,189,140,.35);border-color:var(--brass-hi)}}
+@keyframes beckon{0%,100%{box-shadow:0 0 0 0 rgba(220,189,140,0);border-color:rgba(220,189,140,.4)}45%{box-shadow:0 0 0 1px var(--brass-hi),0 0 16px rgba(220,189,140,.45);border-color:var(--brass-hi)}}
 .looks.fresh .look{animation:beckon 2.6s ease-in-out infinite}
 .looks.fresh li:nth-child(2) .look{animation-delay:.45s}
 .looks.fresh li:nth-child(3) .look{animation-delay:.9s}
 .looks.fresh li:nth-child(4) .look{animation-delay:1.35s}
 .looks.fresh li:nth-child(5) .look{animation-delay:1.8s}
 
-/* roomy desktops: larger hangers */
-@media (min-width:1000px) and (min-aspect-ratio:5/4) and (min-height:700px){ :root{--rail-w:136px} .looks{gap:14px} }
-/* short landscape screens (phones on their side) */
-@media (max-height:520px){
-  :root{--rail-w:68px}
-  .looks{gap:8px}
-}
-
-/* ---------- portrait / narrow: mirror above, hangers in one row below ---------- */
-@media (max-aspect-ratio:5/4){
-  .room{flex-direction:column;gap:12px;justify-content:center}
-  .mirror{--mh:min(calc(100vh - 2 * var(--pad) - var(--strip) - 12px), calc((100vw - 2 * var(--pad)) * 1.7778));
-    --mh:min(calc(100dvh - 2 * var(--pad) - var(--strip) - 12px), calc((100vw - 2 * var(--pad)) * 1.7778))}
-  .rail{flex:0 0 auto;width:100%;max-width:560px}
-  .looks{flex-direction:row;justify-content:center;gap:8px;overflow-x:auto;overflow-y:hidden;padding:3px 2px;scroll-snap-type:x proximity}
-  .looks li{flex:1 1 0;min-width:52px;max-width:66px;scroll-snap-align:center}
-  .look{padding:4px}
-}
-@media (max-aspect-ratio:5/4) and (min-width:600px){
-  :root{--strip:124px}
-  .looks li{max-width:88px;min-width:70px}
-}
+/* nobody has touched anything for a few seconds: the thumbnails and icons sink into the picture; any touch brings them back */
+body.calm .rail{opacity:.3}
+body.calm .turn.show{opacity:.4}
+.rail:hover{opacity:1}
 @media (prefers-reduced-motion:reduce){ .glass video.breathe{animation:none} .looks.fresh .look{animation:none} .turn.hint{animation:none} }
 </style>
 
-<div class="room">
+<div class="room" style="position:fixed;inset:0">
   <div class="mirror" id="mirror">
     <div class="glass" id="glass">
       <div class="stack" id="stack"><img class="poster on" id="poster" src="media/poster.jpg" alt="试衣间的镜子"></div>
@@ -131,10 +106,10 @@ body{
       <button class="turn" id="turn" type="button" aria-label="让她转身给你看"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v4.5h-4.5"/></svg></button>
       </div>
     </div>
+    <aside class="rail" aria-label="衣架">
+      <ul class="looks fresh" id="looks"></ul>
+    </aside>
   </div>
-  <aside class="rail" aria-label="衣架">
-    <ul class="looks fresh" id="looks"></ul>
-  </aside>
 </div>
 
 <script>
@@ -444,6 +419,12 @@ body{
     if (!act) return;
     if (document.hidden) act.pause(); else act.play().catch(() => {});
   });
+
+  // idle for a few seconds -> thumbnails and icons fade back; any touch / key brings them up again
+  let calmT = 0;
+  const wake = () => { document.body.classList.remove("calm"); clearTimeout(calmT); calmT = setTimeout(() => document.body.classList.add("calm"), 3500); };
+  ["pointerdown","pointermove","touchstart","keydown"].forEach(ev => addEventListener(ev, wake, { passive:true }));
+  wake();
 
   // ?debug=1 shows what the state machine is doing
   if (new URLSearchParams(location.search).get("debug") === "1"){
