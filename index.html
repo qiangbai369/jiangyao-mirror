@@ -88,11 +88,22 @@ body{
 .looks.fresh li:nth-child(4) .look{animation-delay:1.35s}
 .looks.fresh li:nth-child(5) .look{animation-delay:1.8s}
 
+
+/* ---------- texture: faint film grain + a few dust motes drifting in the light (never over her centre column) ---------- */
+.fx{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden}
+.grain{position:absolute;inset:-20%;opacity:.07;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .85  0 0 0 0 .8  0 0 0 0 .75  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  animation:grain .9s steps(1) infinite}
+@keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(-3%,2%)}50%{transform:translate(2%,-3%)}75%{transform:translate(-2%,-1%)}100%{transform:translate(0,0)}}
+.mote{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(255,226,180,.9),rgba(255,226,180,0) 70%);opacity:0;will-change:transform,opacity;
+  animation:mote var(--d,16s) linear infinite;animation-delay:var(--l,0s)}
+@keyframes mote{0%{opacity:0;transform:translate(0,0)}15%{opacity:var(--o,.3)}85%{opacity:var(--o,.3)}100%{opacity:0;transform:translate(var(--dx,20px),var(--dy,-90px))}}
+
 /* nobody has touched anything for a few seconds: the thumbnails and icons sink into the picture; any touch brings them back */
 body.calm .rail{opacity:.3}
 body.calm .turn.show{opacity:.4}
 .rail:hover{opacity:1}
-@media (prefers-reduced-motion:reduce){ .glass video.breathe{animation:none} .looks.fresh .look{animation:none} .turn.hint{animation:none} }
+@media (prefers-reduced-motion:reduce){ .grain,.mote{animation:none} .mote{display:none} .glass video.breathe{animation:none} .looks.fresh .look{animation:none} .turn.hint{animation:none} }
 </style>
 
 <div class="room" style="position:fixed;inset:0">
@@ -100,6 +111,7 @@ body.calm .turn.show{opacity:.4}
     <div class="glass" id="glass">
       <div class="stack" id="stack"><img class="poster on" id="poster" src="media/poster.jpg" alt="试衣间的镜子"></div>
       <div class="sheen"></div>
+      <div class="fx" id="fx" aria-hidden="true"><div class="grain"></div></div>
       <div class="dbg" id="dbg" hidden></div>
       <div class="acts">
       <button class="turn" id="near" type="button" aria-label="让她走近镜子"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button>
@@ -157,6 +169,7 @@ body.calm .turn.show{opacity:.4}
   const MOVES = new Set(["turn", "near", "react", "fidget"]);
   const moveEls = c => [c.turn, c.near, c.react, ...(c.fidgets || [])].filter(Boolean);
   let moveEl = null, asks = 0, fidgetT = 0, lastFidget = -1, queuedMove = null;
+  let switchTimes = [], impatient = false, fidgetRun = 0;    // fast outfit switching -> a cool look when she lands; the longer she is left alone, the rarer her fidgets
   function mk(src, loop){
     const v = document.createElement("video");
     v._real = src; v.src = TINY; v.preload = "auto"; v.loop = !!loop;
@@ -177,6 +190,40 @@ body.calm .turn.show{opacity:.4}
     clips[i].intro.addEventListener("ended", () => { if (state === "intro") onIntroEnd(); });
     clips[i].outro.addEventListener("ended", () => { if (state === "outro") onOutroEnd(); });
   });
+
+
+  // dust motes: a dozen tiny soft lights drifting slowly up at the sides of the picture (x 4-30% and 70-96%), so they never cross her face
+  (() => {
+    const fx = document.getElementById("fx"); if (!fx || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    for (let i = 0; i < 12; i++){
+      const m = document.createElement("i"); m.className = "mote";
+      const left = i % 2 ? 70 + Math.random() * 26 : 4 + Math.random() * 26, size = 2 + Math.random() * 3;
+      m.style.cssText = `left:${left}%;top:${12 + Math.random() * 70}%;width:${size}px;height:${size}px;--d:${14 + Math.random() * 14}s;--l:${-Math.random() * 20}s;--o:${.18 + Math.random() * .22};--dx:${(Math.random() - .5) * 40}px;--dy:${-60 - Math.random() * 90}px`;
+      fx.appendChild(m);
+    }
+  })();
+
+  // ---------- room tone (synthesised, very quiet, starts with the first tap; ?sound=0 turns it off) ----------
+  let actx = null;
+  function startAmbience(){
+    if (actx || new URLSearchParams(location.search).get("sound") === "0") return;
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    try {
+      actx = new AC();
+      const len = actx.sampleRate * 6, buf = actx.createBuffer(1, len, actx.sampleRate), d = buf.getChannelData(0);
+      let b0 = 0, b1 = 0, b2 = 0;
+      for (let i = 0; i < len; i++){ const w = Math.random() * 2 - 1; b0 = .99765 * b0 + w * .099; b1 = .963 * b1 + w * .2965; b2 = .57 * b2 + w * 1.05; d[i] = (b0 + b1 + b2 + w * .18) * .12; }
+      const src = actx.createBufferSource(); src.buffer = buf; src.loop = true;
+      const lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1500;
+      const hp = actx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 160;      // phone speakers cannot play deep rumble anyway
+      const g = actx.createGain(); g.gain.value = 0;
+      const lfo = actx.createOscillator(), lg = actx.createGain(); lfo.frequency.value = .06; lg.gain.value = .006; lfo.connect(lg); lg.connect(g.gain);
+      src.connect(hp); hp.connect(lp); lp.connect(g); g.connect(actx.destination);
+      src.start(); lfo.start();
+      g.gain.setTargetAtTime(.03, actx.currentTime, 2);
+      actx.resume && actx.resume();
+    } catch(e){ actx = null; }
+  }
 
   // wardrobe: portrait thumbnails only; the names are for screen readers
   LOOKS.forEach((l, i) => {
@@ -277,12 +324,15 @@ body.calm .turn.show{opacity:.4}
     if (c.idle) await begin(c.idle, ++seq);            // breathing + one blink, first/last frame identical, native loop
     else c.intro.classList.add("breathe");             // fallback until this look has its own breathing clip
     armFidget();
+    const imp = impatient; impatient = false;
+    if (imp && c.react) setTimeout(() => { if (state === "standing" && pending === null && !press) startMove("react", false); }, 1400);
   }
   // left alone for a while, she does something small on her own (hair, weight shift)
   function armFidget(){
     clearTimeout(fidgetT);
     const c = clips[current]; if (!c || !c.fidgets.length) return;
-    fidgetT = setTimeout(() => { if (state === "standing" && pending === null && !press) startMove("fidget", false); }, 9000 + Math.random() * 5000);
+    const wait = 9000 + Math.random() * 5000 + Math.min(fidgetRun, 4) * 4000;
+    fidgetT = setTimeout(() => { if (state === "standing" && pending === null && !press){ fidgetRun++; startMove("fidget", false); } }, wait);
   }
   // standing -> a short move -> standing again. Each move clip starts and ends on the standing frame.
   //   turn:   she turns to show the back, glances at the mirror over her shoulder, turns back   (tap / drag / icon)
@@ -303,7 +353,7 @@ body.calm .turn.show{opacity:.4}
       lastFidget = k; el = c.fidgets[k]; asks = 0;                // she has had a rest: the patience counter resets
     } else {
       if (!c[kind]) return;
-      used[kind] = true;
+      used[kind] = true; fidgetRun = 0;
       if (byUser && ++asks > 3 && c.react){ asks = 0; st = "react"; el = c.react; }
       if (!el) el = c[kind];
     }
@@ -339,7 +389,7 @@ body.calm .turn.show{opacity:.4}
 
   // iOS only lets a video play() later if it was started inside a tap: the first tap on a hanger starts every (blank) element once
   function unlock(){
-    entered = true; list.classList.remove("fresh");
+    entered = true; list.classList.remove("fresh"); startAmbience();
     allVideos.forEach(v => {
       v.muted = true;
       const p = v.play();
@@ -349,6 +399,10 @@ body.calm .turn.show{opacity:.4}
   function choose(i){
     if (!LOOKS[i]) return;
     if (!entered) unlock();
+    // three outfit changes inside 25 s: she gets impatient (a cool look once she is standing, if this look has that clip)
+    const now = Date.now(); switchTimes = switchTimes.filter(t => now - t < 25000);
+    if (!(i === current && state !== "room")){ switchTimes.push(now); fidgetRun = 0; }
+    if (switchTimes.length >= 3){ impatient = true; switchTimes = []; }
     if (state === "room"){ startIntro(i); return; }
     if ((state === "intro" || state === "standing" || MOVES.has(state)) && i === current && pending === null) return;   // she is already wearing it: do nothing
     if (i === current && pending !== null && state !== "outro"){ pending = null; render(); return; }   // changed her mind back before she left: she stays
@@ -438,6 +492,7 @@ body.calm .turn.show{opacity:.4}
     if (!act) return;
     if (document.hidden) act.pause(); else act.play().catch(() => {});
   });
+  document.addEventListener("visibilitychange", () => { if (!actx) return; if (document.hidden) actx.suspend(); else actx.resume(); });
 
   // idle for a few seconds -> thumbnails and icons fade back; any touch / key brings them up again
   let calmT = 0;
@@ -456,6 +511,6 @@ body.calm .turn.show{opacity:.4}
     upd();
   }
   // test hook for automated checks
-  window.__jy = { get asks(){ return asks; }, fidgetNow(){ if (state === "standing") startMove("fidget", false); }, get scrubbing(){ return scrubbing; }, get state(){ return state; }, get current(){ return current; }, get pending(){ return pending; }, choose };
+  window.__jy = { get ambient(){ return actx ? actx.state : null; }, get impatient(){ return impatient; }, get asks(){ return asks; }, fidgetNow(){ if (state === "standing") startMove("fidget", false); }, get scrubbing(){ return scrubbing; }, get state(){ return state; }, get current(){ return current; }, get pending(){ return pending; }, choose };
 })();
 </script>
